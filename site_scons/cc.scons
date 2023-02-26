@@ -33,6 +33,10 @@ ENV.AppendUnique(
         # Generates .su files with stack usage information
         # "-fstack-usage",
         "-g",
+        # dev
+        "-Wno-error=unused-variable",
+        "-Wno-error=unused-parameter",
+        "-Wno-error=unused-but-set-parameter",
     ],
     CPPDEFINES=[
         "_GNU_SOURCE",
