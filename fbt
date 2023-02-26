@@ -24,7 +24,7 @@ if [ -z "$FBT_VERBOSE" ]; then
 fi
 
 if [ -z "$FBT_NO_SYNC" ]; then
-    if [ ! -d "$SCRIPT_PATH/.git" ]; then
+    if [ ! -e "$SCRIPT_PATH/.git" ]; then
         echo "\".git\" directory not found, please clone repo via \"git clone --recursive\"";
         exit 1;
     fi
