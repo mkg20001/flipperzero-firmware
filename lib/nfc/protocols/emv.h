@@ -4,21 +4,31 @@
 
 #define MAX_APDU_LEN 255
 
-#define EMV_TAG_APP_TEMPLATE 0x61
-#define EMV_TAG_AID 0x4F
-#define EMV_TAG_PRIORITY 0x87
-#define EMV_TAG_PDOL 0x9F38
-#define EMV_TAG_CARD_NAME 0x50
-#define EMV_TAG_FCI 0xBF0C
-#define EMV_TAG_LOG_CTRL 0x9F4D
-#define EMV_TAG_TRACK_1_EQUIV 0x56
-#define EMV_TAG_TRACK_2_EQUIV 0x57
-#define EMV_TAG_PAN 0x5A
-#define EMV_TAG_AFL 0x94
-#define EMV_TAG_EXP_DATE 0x5F24
-#define EMV_TAG_COUNTRY_CODE 0x5F28
-#define EMV_TAG_CURRENCY_CODE 0x9F42
-#define EMV_TAG_CARDHOLDER_NAME 0x5F20
+// Contains one or more data objects relevant to an application directory entry according to ISO/IEC 7816-5
+#define EMV_TAG_APP_TEMPLATE 0x61 // 97
+// Identifies the application as described in ISO/IEC 7816-5
+#define EMV_TAG_AID 0x4F // 79
+#define EMV_TAG_PRIORITY 0x87 // 135
+#define EMV_TAG_PDOL 0x9F38 // 40760
+#define EMV_TAG_CARD_NAME 0x50 // 80
+#define EMV_TAG_FCI 0xBF0C // 48908
+#define EMV_TAG_LOG_CTRL 0x9F4D // 40781
+#define EMV_TAG_TRACK_1_EQUIV 0x56 // 86
+#define EMV_TAG_TRACK_2_EQUIV 0x57 // 87
+// Valid cardholder account numbe
+#define EMV_TAG_PAN 0x5A // 90
+#define EMV_TAG_AFL 0x94 // 148
+#define EMV_TAG_EXP_DATE 0x5F24 // 24356
+#define EMV_TAG_COUNTRY_CODE 0x5F28 // 24360
+#define EMV_TAG_CURRENCY_CODE 0x9F42 // 40770
+#define EMV_TAG_CARDHOLDER_NAME 0x5F20 // 24352
+
+// Mnemonic associated with the AID according to ISO/IEC 7816-5"
+#define EMV_TAG_ALABEL 0x50
+// ISO-7816 Path
+#define EMV_TAG_PATH 0x51
+// Identifies the FCI template according to ISO/IEC 7816-4
+#define EMV_TAG_FCI_TEMPLATE
 
 typedef struct {
     char name[32];
@@ -78,3 +88,29 @@ bool emv_read_bank_card(FuriHalNfcTxRxContext* tx_rx, EmvApplication* emv_app);
  * @return true on success
  */
 bool emv_card_emulation(FuriHalNfcTxRxContext* tx_rx);
+
+struct PPSECmd {
+    bool parsing;
+    uint8_t length;
+    uint8_t expected_length;
+    uint8_t data[40];
+};
+
+typedef struct {
+    EmvData data;
+    void* context;
+    struct PPSECmd cmd;
+    uint8_t state;
+} EmvEmulator;
+
+void emv_reset_emulation(EmvEmulator* emulator);
+
+void emv_prepare_emulation(EmvEmulator* emulator, EmvData* data);
+
+bool emv_prepare_emulation_response(
+        uint8_t* buff_rx,
+        uint16_t buff_rx_len,
+        uint8_t* buff_tx,
+        uint16_t* buff_tx_len,
+        uint32_t* data_type,
+        void* context);

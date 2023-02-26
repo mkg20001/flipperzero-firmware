@@ -39,6 +39,8 @@ void nfc_worker_read_type(NfcWorker* nfc_worker);
 
 void nfc_worker_emulate_uid(NfcWorker* nfc_worker);
 
+void nfc_worker_emulate_emv(NfcWorker* nfc_worker);
+
 void nfc_worker_emulate_mf_ultralight(NfcWorker* nfc_worker);
 
 void nfc_worker_emulate_mf_classic(NfcWorker* nfc_worker);

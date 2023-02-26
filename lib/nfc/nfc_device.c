@@ -50,8 +50,8 @@ void nfc_device_free(NfcDevice* nfc_dev) {
 static void nfc_device_prepare_format_string(NfcDevice* dev, FuriString* format_string) {
     if(dev->format == NfcDeviceSaveFormatUid) {
         furi_string_set(format_string, "UID");
-    } else if(dev->format == NfcDeviceSaveFormatBankCard) {
-        furi_string_set(format_string, "Bank card");
+    } else if(dev->format == NfcDeviceSaveFormatEMV) {
+        furi_string_set(format_string, "EMV");
     } else if(dev->format == NfcDeviceSaveFormatMifareUl) {
         furi_string_set(format_string, nfc_mf_ul_type(dev->dev_data.mf_ul_data.type, true));
     } else if(dev->format == NfcDeviceSaveFormatMifareClassic) {
@@ -69,8 +69,8 @@ static bool nfc_device_parse_format_string(NfcDevice* dev, FuriString* format_st
         dev->dev_data.protocol = NfcDeviceProtocolUnknown;
         return true;
     }
-    if(furi_string_start_with_str(format_string, "Bank card")) {
-        dev->format = NfcDeviceSaveFormatBankCard;
+    if(furi_string_start_with_str(format_string, "Bank card") || furi_string_start_with_str(format_string, "EMV")) {
+        dev->format = NfcDeviceSaveFormatEMV;
         dev->dev_data.protocol = NfcDeviceProtocolEMV;
         return true;
     }
@@ -94,6 +94,35 @@ static bool nfc_device_parse_format_string(NfcDevice* dev, FuriString* format_st
         return true;
     }
     return false;
+}
+
+static bool nfc_device_save_emv_data(FlipperFormat* file, NfcDevice* dev) {
+    bool saved = false;
+    EmvData * data = &dev->dev_data.emv_data;
+    FuriString* temp_str;
+    uint32_t data_cnt = 0;
+    temp_str = furi_string_alloc();
+
+    do {
+        if (!flipper_format_write_comment_cstr(file, "EMV specific data")) break;
+        if(!flipper_format_write_hex(file, "AID", data->aid, data->aid_len)) break;
+        if(!flipper_format_write_string_cstr(file, "Name", data->name)) break;
+        if(!flipper_format_write_hex(file, "Number", data->number, data->number_len)) break;
+        saved = true;
+        // Write optional data
+        uint8_t exp_data[2] = {
+                data->exp_mon,
+                data->exp_year
+        };
+        if(flipper_format_write_hex(file, "Exp data", exp_data, 2)) break;
+        data_cnt = data->country_code;
+        if(flipper_format_write_uint32(file, "Country code", &data_cnt, 1)) break;
+        data_cnt = data->currency_code;
+        if(flipper_format_write_uint32(file, "Currency code", &data_cnt, 1)) break;
+    } while(false);
+
+    furi_string_free(temp_str);
+    return saved;
 }
 
 static bool nfc_device_save_mifare_ul_data(FlipperFormat* file, NfcDevice* dev) {
@@ -1083,7 +1112,9 @@ bool nfc_device_save(NfcDevice* dev, const char* dev_name) {
         if(!flipper_format_write_hex(file, "SAK", &data->sak, 1)) break;
         // Save more data if necessary
         if(dev->format == NfcDeviceSaveFormatMifareUl) {
-            if(!nfc_device_save_mifare_ul_data(file, dev)) break;
+            if (!nfc_device_save_mifare_ul_data(file, dev)) break;
+        } else if(dev->format == NfcDeviceSaveFormatEMV) {
+            if (!nfc_device_save_emv_data(file, dev)) break;
         } else if(dev->format == NfcDeviceSaveFormatMifareDesfire) {
             if(!nfc_device_save_mifare_df_data(file, dev)) break;
         } else if(dev->format == NfcDeviceSaveFormatMifareClassic) {
@@ -1186,7 +1217,7 @@ static bool nfc_device_load_data(NfcDevice* dev, FuriString* path, bool show_dia
             if(!nfc_device_load_mifare_classic_data(file, dev)) break;
         } else if(dev->format == NfcDeviceSaveFormatMifareDesfire) {
             if(!nfc_device_load_mifare_df_data(file, dev)) break;
-        } else if(dev->format == NfcDeviceSaveFormatBankCard) {
+        } else if(dev->format == NfcDeviceSaveFormatEMV) {
             if(!nfc_device_load_bank_card_data(file, dev)) break;
         }
         parsed = true;

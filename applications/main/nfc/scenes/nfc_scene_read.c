@@ -85,7 +85,7 @@ bool nfc_scene_read_on_event(void* context, SceneManagerEvent event) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneMfDesfireReadSuccess);
             DOLPHIN_DEED(DolphinDeedNfcReadSuccess);
             consumed = true;
-        } else if(event.event == NfcWorkerEventReadBankCard) {
+        } else if(event.event == NfcWorkerEventReadEMV) {
             notification_message(nfc->notifications, &sequence_success);
             scene_manager_next_scene(nfc->scene_manager, NfcSceneEmvReadSuccess);
             DOLPHIN_DEED(DolphinDeedNfcReadSuccess);

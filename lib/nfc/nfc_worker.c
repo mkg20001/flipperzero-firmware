@@ -99,6 +99,8 @@ int32_t nfc_worker_task(void* context) {
         nfc_worker_emulate_apdu(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateMfUltralightEmulate) {
         nfc_worker_emulate_mf_ultralight(nfc_worker);
+    } else if(nfc_worker->state == NfcWorkerStateEMVEmulate) {
+        nfc_worker_emulate_emv(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateMfClassicEmulate) {
         nfc_worker_emulate_mf_classic(nfc_worker);
     } else if(nfc_worker->state == NfcWorkerStateMfClassicWrite) {
@@ -359,7 +361,7 @@ void nfc_worker_read(NfcWorker* nfc_worker) {
                         event = NfcWorkerEventReadMfDesfire;
                         break;
                     } else if(dev_data->protocol == NfcDeviceProtocolEMV) {
-                        event = NfcWorkerEventReadBankCard;
+                        event = NfcWorkerEventReadEMV;
                         break;
                     } else if(dev_data->protocol == NfcDeviceProtocolUnknown) {
                         event = NfcWorkerEventReadUidNfcA;
@@ -447,7 +449,7 @@ void nfc_worker_read_type(NfcWorker* nfc_worker) {
                 } else if(read_mode == NfcReadModeEMV) {
                     nfc_worker->dev_data->protocol = NfcDeviceProtocolEMV;
                     if(nfc_worker_read_bank_card(nfc_worker, &tx_rx)) {
-                        event = NfcWorkerEventReadBankCard;
+                        event = NfcWorkerEventReadEMV;
                         break;
                     }
                 } else if(read_mode == NfcReadModeNFCA) {
@@ -551,13 +553,13 @@ void nfc_worker_emulate_mf_ultralight(NfcWorker* nfc_worker) {
     while(nfc_worker->state == NfcWorkerStateMfUltralightEmulate) {
         mf_ul_reset_emulation(&emulator, true);
         furi_hal_nfc_emulate_nfca(
-            nfc_data->uid,
-            nfc_data->uid_len,
-            nfc_data->atqa,
-            nfc_data->sak,
-            mf_ul_prepare_emulation_response,
-            &emulator,
-            5000);
+                nfc_data->uid,
+                nfc_data->uid_len,
+                nfc_data->atqa,
+                nfc_data->sak,
+                mf_ul_prepare_emulation_response,
+                &emulator,
+                5000);
         // Check if data was modified
         if(emulator.data_changed) {
             nfc_worker->dev_data->mf_ul_data = emulator.data;
@@ -566,6 +568,35 @@ void nfc_worker_emulate_mf_ultralight(NfcWorker* nfc_worker) {
             }
             emulator.data_changed = false;
         }
+    }
+}
+
+void nfc_worker_emulate_emv(NfcWorker* nfc_worker) {
+    FuriHalNfcDevData* nfc_data = &nfc_worker->dev_data->nfc_data;
+    EmvEmulator emulator = {};
+
+    emv_prepare_emulation(&emulator, &nfc_worker->dev_data->emv_data);
+
+    emulator.context = nfc_worker;
+
+    while(nfc_worker->state == NfcWorkerStateEMVEmulate) {
+        emv_reset_emulation(&emulator);
+        furi_hal_nfc_emulate_nfca(
+                nfc_data->uid,
+                nfc_data->uid_len,
+                nfc_data->atqa,
+                nfc_data->sak,
+                emv_prepare_emulation_response,
+                &emulator,
+                5000);
+        // Check if data was modified
+        /* if(emulator.data_changed) {
+            nfc_worker->dev_data->mf_ul_data = emulator.data;
+            if(nfc_worker->callback) {
+                nfc_worker->callback(NfcWorkerEventSuccess, nfc_worker->context);
+            }
+            emulator.data_changed = false;
+        } */
     }
 }
 

@@ -12,6 +12,7 @@ typedef enum {
     NfcWorkerStateRead,
     NfcWorkerStateUidEmulate,
     NfcWorkerStateMfUltralightEmulate,
+    NfcWorkerStateEMVEmulate,
     NfcWorkerStateMfClassicEmulate,
     NfcWorkerStateMfClassicWrite,
     NfcWorkerStateMfClassicUpdate,
@@ -39,7 +40,7 @@ typedef enum {
     NfcWorkerEventReadMfClassicDone,
     NfcWorkerEventReadMfClassicLoadKeyCache,
     NfcWorkerEventReadMfClassicDictAttackRequired,
-    NfcWorkerEventReadBankCard,
+    NfcWorkerEventReadEMV,
 
     // Nfc worker common events
     NfcWorkerEventSuccess,

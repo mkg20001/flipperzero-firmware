@@ -35,7 +35,7 @@ typedef enum {
 
 typedef enum {
     NfcDeviceSaveFormatUid,
-    NfcDeviceSaveFormatBankCard,
+    NfcDeviceSaveFormatEMV,
     NfcDeviceSaveFormatMifareUl,
     NfcDeviceSaveFormatMifareClassic,
     NfcDeviceSaveFormatMifareDesfire,

@@ -442,3 +442,108 @@ bool emv_card_emulation(FuriHalNfcTxRxContext* tx_rx) {
 
     return emulation_complete;
 }
+
+void emv_reset_emulation(EmvEmulator* emulator) {
+    emulator->state = 0;
+}
+
+void emv_prepare_emulation(EmvEmulator* emulator, EmvData* data) {
+    FURI_LOG_D(TAG, "Prepare emulation");
+    emv_reset_emulation(emulator);
+}
+
+
+
+bool emv_prepare_emulation_response(
+        uint8_t* buff_rx,
+        uint16_t buff_rx_len,
+        uint8_t* buff_tx,
+        uint16_t* buff_tx_len,
+        uint32_t* data_type,
+        void* context) {
+    furi_assert(context);
+    EmvEmulator* emulator = context;
+    uint16_t tx_bytes = 0;
+    uint16_t tx_bits = 0;
+    bool command_parsed = false;
+    bool send_ack = false;
+    bool respond_nothing = false;
+    bool reset_idle = false;
+
+    uint16_t bytes;
+
+#ifdef FURI_DEBUG
+    FuriString* debug_buf;
+    debug_buf = furi_string_alloc();
+    for(int i = 0; i < (buff_rx_len + 7) / 8; ++i) {
+        furi_string_cat_printf(debug_buf, "%02x ", buff_rx[i]);
+    }
+    furi_string_trim(debug_buf);
+    FURI_LOG_T(TAG, "Emu RX (%d): %s", buff_rx_len, furi_string_get_cstr(debug_buf));
+    furi_string_reset(debug_buf);
+#endif
+
+    // FIXME: should we handle bits not div 8?
+        /* if (buff_rx_len <= 8) {
+            if (!emulator->cmd.parsing && buff_rx[0] == 0x00 && buff_rx[1] == 0xA4) { // parse PPSE
+                emulator->cmd.parsing = true;
+                emulator->cmd.expected_length = buff_rx[3];
+                bytes = buff_rx_len / 8 - 3;
+                memcpy(emulator->cmd.data, buff_rx, bytes);
+                emulator->cmd.length += bytes;
+            } else if (emulator->cmd.parsing) {
+                bytes = buff_rx_len / 8 ;
+                memcpy(emulator->cmd.data, buff_rx, buff_rx_len / 8 - 2);
+                emulator->cmd.length += bytes;
+            }
+            if (emulator->cmd.parsing && emulator->cmd.length >= emulator->cmd.expected_length) {
+                emulator->cmd.data[emulator->cmd.length] = '\0';
+                uint8_t * data = (uint8_t *) emulator->cmd.data;
+
+            } else {
+                        // send nothing
+            *buff_tx_len = UINT16_MAX;
+            *data_type = FURI_HAL_NFC_TX_RAW_RX_DEFAULT;
+            }
+        } */
+
+        // this is a shit "barely works" hack
+            if (emulator->state == 0) { // select PPSE
+                FURI_LOG_D(TAG, "Read select PPSE command");
+                memcpy(buff_tx, select_ppse_ans, sizeof(select_ppse_ans));
+                *buff_tx_len = sizeof(select_ppse_ans) * 8;
+                *data_type = FURI_HAL_NFC_TXRX_DEFAULT;
+                FURI_LOG_D(TAG, "Send select PPSE answer and read select App command");
+                emulator->state++;
+            } else if (emulator->state == 1) {
+                memcpy(buff_tx, select_app_ans, sizeof(select_app_ans));
+                *buff_tx_len = sizeof(select_app_ans) * 8;
+                *data_type = FURI_HAL_NFC_TXRX_DEFAULT;
+                FURI_LOG_D(TAG, "Send select App answer and read get PDOL command");
+                emulator->state++;
+            } else if (emulator->state == 2) {
+                memcpy(buff_tx, pdol_ans, sizeof(pdol_ans));
+                *buff_tx_len = sizeof(pdol_ans) * 8;
+                *data_type = FURI_HAL_NFC_TXRX_DEFAULT;
+                FURI_LOG_D(TAG, "Send get PDOL answer");
+                emulator->state++;
+            } // no further states, this will halt and reset emulation
+
+#ifdef FURI_DEBUG
+    if(*buff_tx_len == UINT16_MAX) {
+        FURI_LOG_T(TAG, "Emu TX: no reply");
+    } else if(*buff_tx_len > 0) {
+        int count = (*buff_tx_len + 7) / 8;
+        for(int i = 0; i < count; ++i) {
+            furi_string_cat_printf(debug_buf, "%02x ", buff_tx[i]);
+        }
+        furi_string_trim(debug_buf);
+        FURI_LOG_T(TAG, "Emu TX (%d): %s", *buff_tx_len, furi_string_get_cstr(debug_buf));
+        furi_string_free(debug_buf);
+    } else {
+        FURI_LOG_T(TAG, "Emu TX: HALT");
+    }
+#endif
+
+    return tx_bits > 0;
+}

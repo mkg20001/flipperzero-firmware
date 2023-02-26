@@ -1,6 +1,9 @@
 #include "../nfc_i.h"
+#include <dolphin/dolphin.h>
 
 enum SubmenuIndex {
+    SubmenuIndexSave,
+    SubmenuIndexEmulate,
     SubmenuIndexInfo,
 };
 
@@ -14,7 +17,10 @@ void nfc_scene_emv_menu_on_enter(void* context) {
     Nfc* nfc = context;
     Submenu* submenu = nfc->submenu;
 
+    submenu_add_item(submenu, "Save", SubmenuIndexSave, nfc_scene_emv_menu_submenu_callback, nfc);
+    submenu_add_item(submenu, "Emulate", SubmenuIndexEmulate, nfc_scene_emv_menu_submenu_callback, nfc);
     submenu_add_item(submenu, "Info", SubmenuIndexInfo, nfc_scene_emv_menu_submenu_callback, nfc);
+
     submenu_set_selected_item(
         nfc->submenu, scene_manager_get_scene_state(nfc->scene_manager, NfcSceneEmvMenu));
 
@@ -26,11 +32,23 @@ bool nfc_scene_emv_menu_on_event(void* context, SceneManagerEvent event) {
     bool consumed = false;
 
     if(event.type == SceneManagerEventTypeCustom) {
-        if(event.event == SubmenuIndexInfo) {
+        scene_manager_set_scene_state(nfc->scene_manager, NfcSceneEmvMenu, event.event);
+        if(event.event == SubmenuIndexSave) {
+            nfc->dev->format = NfcDeviceSaveFormatEMV;
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneSaveName);
+            consumed = true;
+        } else if(event.event == SubmenuIndexEmulate) {
+            scene_manager_next_scene(nfc->scene_manager, NfcSceneEmvEmulate);
+            if(scene_manager_has_previous_scene(nfc->scene_manager, NfcSceneSetType)) {
+                DOLPHIN_DEED(DolphinDeedNfcAddEmulate);
+            } else {
+                DOLPHIN_DEED(DolphinDeedNfcEmulate);
+            }
+            consumed = true;
+        } else if(event.event == SubmenuIndexInfo) {
             scene_manager_next_scene(nfc->scene_manager, NfcSceneNfcDataInfo);
             consumed = true;
         }
-        scene_manager_set_scene_state(nfc->scene_manager, NfcSceneEmvMenu, event.event);
     } else if(event.type == SceneManagerEventTypeBack) {
         consumed = scene_manager_previous_scene(nfc->scene_manager);
     }

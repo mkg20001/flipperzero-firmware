@@ -1,5 +1,6 @@
 #include "../nfc_i.h"
 #include "../helpers/nfc_emv_parser.h"
+#include <dolphin/dolphin.h>
 
 void nfc_scene_emv_read_success_widget_callback(
     GuiButtonType result,

@@ -1,5 +1,5 @@
 entry,status,name,type,params
-Version,v,14.2,,
+Version,+,14.4,,
 Header,+,applications/services/bt/bt_service/bt.h,,
 Header,+,applications/services/cli/cli.h,,
 Header,+,applications/services/cli/cli_vcp.h,,
@@ -782,7 +782,10 @@ Function,+,empty_screen_alloc,EmptyScreen*,
 Function,+,empty_screen_free,void,EmptyScreen*
 Function,+,empty_screen_get_view,View*,EmptyScreen*
 Function,-,emv_card_emulation,_Bool,FuriHalNfcTxRxContext*
+Function,-,emv_prepare_emulation,void,"EmvEmulator*, EmvData*"
+Function,-,emv_prepare_emulation_response,_Bool,"uint8_t*, uint16_t, uint8_t*, uint16_t*, uint32_t*, void*"
 Function,-,emv_read_bank_card,_Bool,"FuriHalNfcTxRxContext*, EmvApplication*"
+Function,-,emv_reset_emulation,void,EmvEmulator*
 Function,-,erand48,double,unsigned short[3]
 Function,-,erf,double,double
 Function,-,erfc,double,double
@@ -2839,7 +2842,7 @@ Function,+,validator_is_file_free,void,ValidatorIsFile*
 Function,+,value_index_bool,uint8_t,"const _Bool, const _Bool[], uint8_t"
 Function,+,value_index_float,uint8_t,"const float, const float[], uint8_t"
 Function,+,value_index_uint32,uint8_t,"const uint32_t, const uint32_t[], uint8_t"
-Function,?,value_index_uint8,uint8_t,"const uint8_t, const uint8_t[], uint8_t"
+Function,+,value_index_uint8,uint8_t,"const uint8_t, const uint8_t[], uint8_t"
 Function,+,variable_item_get_context,void*,VariableItem*
 Function,+,variable_item_get_current_value_index,uint8_t,VariableItem*
 Function,+,variable_item_list_add,VariableItem*,"VariableItemList*, const char*, uint8_t, VariableItemChangeCallback, void*"
