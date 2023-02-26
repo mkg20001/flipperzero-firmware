@@ -8,6 +8,7 @@
 #define SCENE_EVENT_SELECT_FAVORITE_SECONDARY 1
 #define SCENE_EVENT_SELECT_PIN_SETUP 2
 #define SCENE_EVENT_SELECT_AUTO_LOCK_DELAY 3
+#define SCENE_EVENT_SELECT_AUTO_LOCK_MODE 4
 
 #define AUTO_LOCK_DELAY_COUNT 6
 const char* const auto_lock_delay_text[AUTO_LOCK_DELAY_COUNT] = {
@@ -22,6 +23,17 @@ const char* const auto_lock_delay_text[AUTO_LOCK_DELAY_COUNT] = {
 const uint32_t auto_lock_delay_value[AUTO_LOCK_DELAY_COUNT] =
     {0, 30000, 60000, 120000, 300000, 600000};
 
+#define AUTO_LOCK_MODE_COUNT 2
+const char* const auto_lock_mode_text[AUTO_LOCK_MODE_COUNT] = {
+    "Simple",
+    "PIN",
+};
+
+const uint8_t auto_lock_mode_value[AUTO_LOCK_MODE_COUNT] = {
+    0,
+    1
+};
+
 static void desktop_settings_scene_start_var_list_enter_callback(void* context, uint32_t index) {
     DesktopSettingsApp* app = context;
     view_dispatcher_send_custom_event(app->view_dispatcher, index);
@@ -33,6 +45,14 @@ static void desktop_settings_scene_start_auto_lock_delay_changed(VariableItem* i
 
     variable_item_set_current_value_text(item, auto_lock_delay_text[index]);
     app->settings.auto_lock_delay_ms = auto_lock_delay_value[index];
+}
+
+static void desktop_settings_scene_start_auto_lock_mode_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, auto_lock_mode_text[index]);
+    app->settings.auto_lock_mode = auto_lock_mode_value[index];
 }
 
 void desktop_settings_scene_start_on_enter(void* context) {
@@ -62,6 +82,20 @@ void desktop_settings_scene_start_on_enter(void* context) {
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, auto_lock_delay_text[value_index]);
 
+    item = variable_item_list_add(
+        variable_item_list,
+        "Auto Lock Mode",
+        AUTO_LOCK_MODE_COUNT,
+        desktop_settings_scene_start_auto_lock_mode_changed,
+        app);
+
+    variable_item_list_set_enter_callback(
+        variable_item_list, desktop_settings_scene_start_var_list_enter_callback, app);
+    value_index = value_index_uint8(
+        app->settings.auto_lock_mode, auto_lock_mode_value, AUTO_LOCK_MODE_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, auto_lock_mode_text[value_index]);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, DesktopSettingsAppViewVarItemList);
 }
 
@@ -86,6 +120,9 @@ bool desktop_settings_scene_start_on_event(void* context, SceneManagerEvent even
             consumed = true;
             break;
         case SCENE_EVENT_SELECT_AUTO_LOCK_DELAY:
+            consumed = true;
+            break;
+        case SCENE_EVENT_SELECT_AUTO_LOCK_MODE:
             consumed = true;
             break;
         }

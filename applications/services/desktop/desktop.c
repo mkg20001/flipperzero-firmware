@@ -61,7 +61,11 @@ static bool desktop_custom_event_callback(void* context, uint32_t event) {
         desktop_auto_lock_arm(desktop);
         return true;
     case DesktopGlobalAutoLock:
+        DESKTOP_SETTINGS_LOAD(&desktop->settings);
         if(!loader_is_locked(desktop->loader)) {
+            if (desktop->settings.auto_lock_mode) {
+                desktop_pin_lock(&desktop->settings);
+            }
             desktop_lock(desktop);
         }
         return true;

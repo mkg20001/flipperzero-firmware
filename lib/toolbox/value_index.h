@@ -20,6 +20,19 @@ extern "C" {
  */
 uint8_t value_index_uint32(const uint32_t value, const uint32_t values[], uint8_t values_count);
 
+/** Get the index of a uint8_t array element which is closest to the given value.
+ *
+ * Returned index corresponds to the first element found.
+ * If no suitable elements were found, the function returns 0.
+ *
+ * @param   value           value to be searched.
+ * @param   values          pointer to the array to perform the search in.
+ * @param   values_count    array size.
+ *
+ * @return value's index.
+ */
+uint8_t value_index_uint8(const uint8_t value, const uint8_t values[], uint8_t values_count);
+
 /** Get the index of a float array element which is closest to the given value.
  *
  * Returned index corresponds to the first element found.
